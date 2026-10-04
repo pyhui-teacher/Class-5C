@@ -97,7 +97,6 @@
           </p>
         </div>
 
-        <!-- Scenario Card (Auto scrolls into view on mobile) -->
         <div id="scenario-card" class="hidden bg-sky-50 rounded-3xl p-5 sm:p-6 border-2 border-sky-200">
           <span id="scenario-tag" class="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white inline-block">📌 本組情境題目</span>
           <p id="scenario-text" class="text-xl sm:text-2xl font-black text-slate-900 my-4 bg-white/95 p-4 sm:p-5 rounded-2xl border border-sky-100 leading-relaxed"></p>
@@ -225,8 +224,25 @@
   <!-- CUSTOM TOAST -->
   <div id="toast-msg" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-base flex items-center gap-2"></div>
 
-  <script>
-    // 26 Students List (Exact list provided)
+  <!-- FIREBASE SDK & APP LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, increment, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    // Firebase 專案設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyCEyvKPDef4iXfFbtKlLqap_bl0KMhGqvA",
+      authDomain: "class5c-34b4d.firebaseapp.com",
+      projectId: "class5c-34b4d",
+      storageBucket: "class5c-34b4d.firebasestorage.app",
+      messagingSenderId: "450354025490",
+      appId: "1:450354025490:web:4d07baf01b8a76146034cb",
+      measurementId: "G-T9G0DF2ETN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const STUDENTS = [
       '簡慧芳', '蔡峻熙', '陳希澄', '卓凱晉', '張忠俊',
       '招穎軒', '朱樂汶', '段宇晴', '方鈞睎', '何梓悠',
@@ -235,7 +251,6 @@
       '譚文欣', '曾海晴', '曾若晞', '衛施貝', '楊俊霆', '葉俊城'
     ];
 
-    // Pre-set Scenarios (<= 50 chars)
     const SCENARIOS = [
       { id: 'sc-1', title: '男同學變聲被笑', text: '男同學在音樂課唱歌時突然走音破聲，全班有些同學忍不住大笑起來，他難堪地低頭。' },
       { id: 'sc-2', title: '女同學裙沾經血', text: '女同學突然發現經血不小心沾到校裙上，顯得極度慌張不安，想遮又不敢走動。' },
@@ -245,55 +260,30 @@
       { id: 'sc-6', title: '男生長唇毛被嘲笑', text: '男同學唇邊長出淡淡幼黑鬍鬚毛，同伴戲弄他像個小老頭，他尷尬地用手捂著嘴。' }
     ];
 
-    const STORAGE_KEY = 'puberty_empathy_submissions_v1';
-    const LIKES_KEY = 'puberty_empathy_user_likes_v1';
-
-    let inMemorySubmissions = [];
-    let inMemoryLikes = {};
+    let submissions = [];
     let selectedStudents = [];
     let chancesLeft = 3;
     let currentScenario = null;
 
-    function showToast(text, isError = false) {
+    window.showToast = function(text, isError = false) {
       const toast = document.getElementById('toast-msg');
       toast.innerText = text;
       toast.className = `fixed top-6 left-1/2 -translate-x-1/2 z-50 ${isError ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-base flex items-center gap-2 whitespace-nowrap`;
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
+    };
 
-    function getSubmissions() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch (e) {}
-      return inMemorySubmissions;
-    }
-
-    function saveSubmissions(list) {
-      inMemorySubmissions = list;
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-      } catch (e) {}
+    // 即時監聽 Firestore 資料庫變動
+    const q = query(collection(db, "submissions"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      submissions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       updateBadge();
-    }
+      if (!document.getElementById('view-teacher').classList.contains('hidden')) {
+        renderTeacherDashboard();
+      }
+    });
 
-    function getUserLikes() {
-      try {
-        const raw = localStorage.getItem(LIKES_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch (e) {}
-      return inMemoryLikes;
-    }
-
-    function saveUserLikes(likes) {
-      inMemoryLikes = likes;
-      try {
-        localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
-      } catch (e) {}
-    }
-
-    function initStudents() {
+    window.initStudents = function() {
       const grid = document.getElementById('student-grid');
       grid.innerHTML = '';
       STUDENTS.forEach(name => {
@@ -304,9 +294,9 @@
         btn.onclick = () => toggleStudent(name);
         grid.appendChild(btn);
       });
-    }
+    };
 
-    function toggleStudent(name) {
+    window.toggleStudent = function(name) {
       if (selectedStudents.includes(name)) {
         selectedStudents = selectedStudents.filter(n => n !== name);
       } else {
@@ -317,17 +307,15 @@
         selectedStudents.push(name);
       }
       renderStudentSelection();
-    }
+    };
 
     function renderStudentSelection() {
       STUDENTS.forEach(name => {
         const btn = document.getElementById('stu-' + name);
         if (btn) {
-          if (selectedStudents.includes(name)) {
-            btn.className = 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-emerald-600 text-white border-emerald-600 shadow-sm';
-          } else {
-            btn.className = 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-300';
-          }
+          btn.className = selectedStudents.includes(name) 
+            ? 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-emerald-600 text-white border-emerald-600 shadow-sm'
+            : 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-300';
         }
       });
 
@@ -347,7 +335,7 @@
       checkInputsValid();
     }
 
-    function drawScenario() {
+    window.drawScenario = function() {
       if (chancesLeft <= 0) {
         showToast('⚠️ 抽取次數已用盡！請就當前題目作答。', true);
         return;
@@ -378,16 +366,8 @@
       input.disabled = false;
       input.placeholder = '請在此輸入你想對同學說的話，以及你建議的做法...';
 
-      if (navigator.vibrate) {
-        try { navigator.vibrate(40); } catch(e) {}
-      }
-
-      setTimeout(() => {
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 50);
-
       checkInputsValid();
-    }
+    };
 
     function checkInputsValid() {
       const dialogue = document.getElementById('dialogue-input').value.trim();
@@ -418,8 +398,6 @@
 
     document.getElementById('dialogue-input').addEventListener('input', checkInputsValid);
 
-    // Intelligent empathy analysis with quotes strictly <= 50 Chinese chars
-    // Format: 🌟 同理心指數 92%！用「XXX」安撫顯得很有關懷感，一句「XXX」極具包容！建議XXXX
     function analyzeDialogue(dialogue) {
       const text = dialogue.toLowerCase();
       const negativeWords = ['好臭', '噁心', '大笨象', '不要唱', '好醜', '走開', '好髒', '離遠點', '怪胎', '裝什麼', '難聞'];
@@ -462,19 +440,17 @@
         fb = `🌟 同理心指數 ${score}%！說「${snippet}」安撫很有關懷感！建議私下悄悄陪伴並提供具體支援！`;
       }
 
-      if (fb.length > 50) {
-        fb = fb.slice(0, 49) + '！';
-      }
+      if (fb.length > 50) fb = fb.slice(0, 49) + '！';
 
       return { score, feedback: fb };
     }
 
-    function submitAnalysis() {
+    // 寫入 Firebase 資料庫
+    window.submitAnalysis = async function() {
       const dialogue = document.getElementById('dialogue-input').value.trim();
       const analysis = analyzeDialogue(dialogue);
 
       const submission = {
-        id: 'sub-' + Date.now(),
         groupMembers: [...selectedStudents],
         scenario: currentScenario.text,
         dialogue: dialogue,
@@ -484,23 +460,25 @@
         likes: 0
       };
 
-      const subs = getSubmissions();
-      subs.unshift(submission);
-      saveSubmissions(subs);
+      try {
+        await addDoc(collection(db, "submissions"), submission);
+        document.getElementById('result-section').classList.remove('hidden');
+        document.getElementById('result-score').innerText = analysis.score + '%';
+        document.getElementById('result-progress').style.width = analysis.score + '%';
+        document.getElementById('result-feedback').innerText = `「${analysis.feedback}」`;
+        document.getElementById('result-feedback-length').innerText = `字數：${analysis.feedback.length} 字（標準 50 字內）`;
 
-      document.getElementById('result-section').classList.remove('hidden');
-      document.getElementById('result-score').innerText = analysis.score + '%';
-      document.getElementById('result-progress').style.width = analysis.score + '%';
-      document.getElementById('result-feedback').innerText = `「${analysis.feedback}」`;
-      document.getElementById('result-feedback-length').innerText = `字數：${analysis.feedback.length} 字（標準 50 字內）`;
+        document.getElementById('btn-submit').disabled = true;
+        document.getElementById('dialogue-input').disabled = true;
 
-      document.getElementById('btn-submit').disabled = true;
-      document.getElementById('dialogue-input').disabled = true;
+        showToast('✅ 成果已實時同步寫入全班展台！');
+      } catch (error) {
+        console.error("Firebase 寫入失敗:", error);
+        showToast('❌ 寫入失敗，請檢查 Firebase 規則設定！', true);
+      }
+    };
 
-      showToast('✅ 成果已實時寫入全班展台！');
-    }
-
-    function switchView(view) {
+    window.switchView = function(view) {
       if (view === 'student') {
         document.getElementById('view-student').classList.remove('hidden');
         document.getElementById('view-teacher').classList.add('hidden');
@@ -513,18 +491,16 @@
         document.getElementById('nav-student').className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all text-slate-600 hover:text-slate-900';
         renderTeacherDashboard();
       }
-    }
+    };
 
-    function renderTeacherDashboard() {
-      const subs = getSubmissions();
-      const userLikes = getUserLikes();
-      document.getElementById('stat-total').innerText = subs.length;
+    window.renderTeacherDashboard = function() {
+      document.getElementById('stat-total').innerText = submissions.length;
       updateBadge();
 
       const grid = document.getElementById('submissions-grid');
       grid.innerHTML = '';
 
-      if (subs.length === 0) {
+      if (submissions.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full p-12 text-center rounded-3xl border-2 border-dashed border-slate-300 bg-white text-slate-500">
             <h3 class="text-xl font-bold text-slate-700">目前尚無成果紀錄</h3>
@@ -534,17 +510,14 @@
         return;
       }
 
-      subs.forEach(item => {
-        const names = item.groupMembers.join(' 和 ');
-        const given = userLikes[item.id] || 0;
-        const canLike = given < 2;
-
+      submissions.forEach(item => {
+        const names = item.groupMembers ? item.groupMembers.join(' 和 ') : '未知組員';
         const card = document.createElement('div');
         card.className = 'rounded-3xl border-2 border-slate-200 bg-white flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-all';
         card.innerHTML = `
           <div class="p-5 border-b border-slate-100 bg-slate-50">
             <h3 class="text-xl sm:text-2xl font-black text-slate-900 leading-snug">${names}</h3>
-            <span class="text-xs text-slate-400">${item.groupMembers.length} 人組 · ${new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
+            <span class="text-xs text-slate-400">${item.groupMembers ? item.groupMembers.length : 0} 人組 · ${new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
           </div>
 
           <div class="p-5 space-y-3.5 flex-1">
@@ -576,57 +549,52 @@
 
           <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
             <span class="font-black text-rose-500 text-base">💖 ${item.likes || 0} 個讚</span>
-            <button onclick="handleLike('${item.id}')" ${canLike ? '' : 'disabled'} class="px-4 py-2 rounded-xl font-black text-sm flex items-center gap-1 ${canLike ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-xs active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
-              ${canLike ? `👍 給讚 (${given}/2)` : '💖 已給滿 2 讚'}
+            <button onclick="handleLike('${item.id}')" class="px-4 py-2 rounded-xl font-black text-sm flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white shadow-xs active:scale-95">
+              👍 給讚
             </button>
           </div>
         `;
         grid.appendChild(card);
       });
-    }
+    };
 
-    function handleLike(id) {
-      const likes = getUserLikes();
-      const count = likes[id] || 0;
-      if (count >= 2) return;
-      likes[id] = count + 1;
-      saveUserLikes(likes);
-
-      const subs = getSubmissions();
-      const target = subs.find(s => s.id === id);
-      if (target) {
-        target.likes = (target.likes || 0) + 1;
-        saveSubmissions(subs);
-      }
-      renderTeacherDashboard();
-    }
-
-    function openClearModal() {
-      document.getElementById('clear-modal').classList.remove('hidden');
-    }
-
-    function closeClearModal() {
-      document.getElementById('clear-modal').classList.add('hidden');
-    }
-
-    function confirmClearAll() {
-      inMemorySubmissions = [];
-      inMemoryLikes = {};
+    window.handleLike = async function(id) {
       try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(LIKES_KEY);
-      } catch (e) {}
-      closeClearModal();
-      renderTeacherDashboard();
-      showToast('✅ 已成功清空全班成果紀錄！');
-    }
+        const docRef = doc(db, "submissions", id);
+        await updateDoc(docRef, { likes: increment(1) });
+      } catch (e) {
+        console.error("點讚失敗:", e);
+      }
+    };
+
+    window.openClearModal = function() {
+      document.getElementById('clear-modal').classList.remove('hidden');
+    };
+
+    window.closeClearModal = function() {
+      document.getElementById('clear-modal').classList.add('hidden');
+    };
+
+    // 一鍵清除 Firebase 所有資料
+    window.confirmClearAll = async function() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "submissions"));
+        querySnapshot.forEach(async (document) => {
+          await deleteDoc(doc(db, "submissions", document.id));
+        });
+        closeClearModal();
+        showToast('✅ 已成功清空雲端全班成果紀錄！');
+      } catch (e) {
+        console.error("清除失敗:", e);
+        showToast('❌ 清除失敗，請再試一次', true);
+      }
+    };
 
     function updateBadge() {
-      const subs = getSubmissions();
-      document.getElementById('submission-count-badge').innerText = subs.length;
+      document.getElementById('submission-count-badge').innerText = submissions.length;
     }
 
-    // Initialize
+    // 初始化
     initStudents();
     updateBadge();
   </script>
