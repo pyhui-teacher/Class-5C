@@ -414,46 +414,98 @@
 
     document.getElementById('dialogue-input').addEventListener('input', checkInputsValid);
 
+    // 人性化與動態同理心分析邏輯
     function analyzeDialogue(dialogue) {
-      const text = dialogue.toLowerCase();
-      const negativeWords = ['好臭', '噁心', '大笨象', '不要唱', '好醜', '走開', '好髒', '離遠點', '怪胎', '裝什麼', '難聞'];
-      const privacyWords = ['悄悄', '私下', '小聲', '偷偷', '暗中', '遮住', '擋住', '別讓大家看見'];
-      const accompanyWords = ['陪你', '一起', '跟我來', '帶你', '借你', '借給你', '外套', '紙巾', '濕紙巾', '溫水', '去洗手間', '找老師', '去醫療室'];
-      const normalizeWords = ['正常', '長大', '青春期', '大家都會', '沒關係', '別害怕', '別擔心', '別難過', '勇敢', '男子漢', '健康'];
-      const affirmWords = ['很棒', '笑容', '帥氣', '漂亮', '優秀', '特別', '好聽'];
+      const text = dialogue.trim();
+      const lowerText = text.toLowerCase();
 
-      const matchedBad = negativeWords.filter(w => text.includes(w));
-      const matchedPriv = privacyWords.filter(w => text.includes(w));
-      const matchedAcc = accompanyWords.filter(w => text.includes(w));
-      const matchedNorm = normalizeWords.filter(w => text.includes(w));
-      const matchedAff = affirmWords.filter(w => text.includes(w));
+      // 1. 檢測無意義/亂碼/純英數或重複字
+      const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+      const isPureEnglishOrDigits = /^[a-zA-Z0-9\s\.\,\!\?\~\+\-\*\/\=\_\@\#\$\%\^\&\*\(\)]+$/.test(text);
+      const isRepetitive = /(.)\1{3,}/.test(lowerText);
 
-      let score = 75;
-      if (matchedPriv.length > 0) score += 12;
-      if (matchedAcc.length > 0) score += 10;
-      if (matchedNorm.length > 0) score += 8;
-      if (matchedAff.length > 0) score += 5;
-      score = Math.min(99, score);
+      if (!hasChinese || isPureEnglishOrDigits || isRepetitive) {
+        const gibberishScore = Math.floor(Math.random() * 11) + 5; // 5% 至 15% 之間 (< 20%)
+        const gibberishFeedbacks = [
+          `🌟 同理心指數 ${gibberishScore}%！內容好像有點亂打喔，試試認真寫下你想對同學說的關懷話語吧！`,
+          `🌟 同理心指數 ${gibberishScore}%！輸入的內容不太清晰，請認真設身處地為同學想想！`,
+          `🌟 同理心指數 ${gibberishScore}%！這個表達未能展現關懷，試用溫暖的說話鼓勵同學吧！`,
+          `🌟 同理心指數 ${gibberishScore}%！請認真思考情境，寫出具體且顧及同學尊嚴的對白！`
+        ];
+        const fb = gibberishFeedbacks[Math.floor(Math.random() * gibberishFeedbacks.length)];
+        return { score: gibberishScore, feedback: fb };
+      }
+
+      // 2. 關鍵字分類庫
+      const negativeWords = ['好臭', '噁心', '大笨象', '不要唱', '好醜', '走開', '好髒', '離遠點', '怪胎', '裝什麼', '難聞', '笨蛋', '垃圾', '笑死', '丑'];
+      const privacyWords = ['悄悄', '私下', '小聲', '偷偷', '暗中', '遮住', '擋住', '別讓大家看見', '避開', '沒人'];
+      const accompanyWords = ['陪你', '一起', '跟我來', '帶你', '借你', '借給你', '外套', '紙巾', '濕紙巾', '溫水', '去洗手間', '找老師', '去醫療室', '拿給', '遞給'];
+      const normalizeWords = ['正常', '長大', '青春期', '大家都會', '沒關係', '別害怕', '別擔心', '別難過', '勇敢', '男子漢', '健康', '自然', '必然'];
+      const affirmWords = ['很棒', '笑容', '帥氣', '漂亮', '優秀', '特別', '好聽', '努力', '加油', '真棒', '做得好'];
+
+      const matchedBad = negativeWords.filter(w => lowerText.includes(w));
+      const matchedPriv = privacyWords.filter(w => lowerText.includes(w));
+      const matchedAcc = accompanyWords.filter(w => lowerText.includes(w));
+      const matchedNorm = normalizeWords.filter(w => lowerText.includes(w));
+      const matchedAff = affirmWords.filter(w => lowerText.includes(w));
+
+      let score = 65 + Math.floor(Math.random() * 8); // 基礎 65-72 分
+      if (matchedPriv.length > 0) score += 10 + Math.floor(Math.random() * 5);
+      if (matchedAcc.length > 0) score += 8 + Math.floor(Math.random() * 5);
+      if (matchedNorm.length > 0) score += 6 + Math.floor(Math.random() * 4);
+      if (matchedAff.length > 0) score += 4 + Math.floor(Math.random() * 3);
+      score = Math.min(98, score);
 
       let fb = '';
+
       if (matchedBad.length > 0) {
-        score = 35;
-        fb = `🌟 同理心指數 ${score}%！用「${matchedBad[0]}」易傷自尊！改用「大家都會」安撫，建議私下小聲提醒！`;
+        score = Math.floor(Math.random() * 16) + 15; // 15% - 30%
+        const badFeedbacks = [
+          `🌟 同理心指數 ${score}%！用「${matchedBad[0]}」易傷同學自尊！建議改用溫和語氣，私下關心！`,
+          `🌟 同理心指數 ${score}%！字眼「${matchedBad[0]}」可能會讓對方更難堪，試著換個有建設性的表達！`,
+          `🌟 同理心指數 ${score}%！小心「${matchedBad[0]}」造成二次傷害，試著主動伸出援手吧！`
+        ];
+        fb = badFeedbacks[Math.floor(Math.random() * badFeedbacks.length)];
       } else if (matchedPriv.length > 0 && matchedAcc.length > 0) {
-        fb = `🌟 同理心指數 ${score}%！用「${matchedPriv[0]}」顧及隱私，一句「${matchedAcc[0]}」極具包容！建議主動陪伴處理！`;
+        const goodFeedbacks = [
+          `🌟 同理心指數 ${score}%！「${matchedPriv[0]}」顧及了尊嚴，加上「${matchedAcc[0]}」貼心又具體，真棒！`,
+          `🌟 同理心指數 ${score}%！能注意到私下處理（「${matchedPriv[0]}」）並主動陪伴，同理心非常高！`,
+          `🌟 同理心指數 ${score}%！一句「${matchedAcc[0]}」溫暖人心，選擇悄悄幫忙更是充滿智慧！`
+        ];
+        fb = goodFeedbacks[Math.floor(Math.random() * goodFeedbacks.length)];
       } else if (matchedPriv.length > 0) {
-        fb = `🌟 同理心指數 ${score}%！用「${matchedPriv[0]}」安撫很有關懷感！建議加上具體陪伴協助，更顯貼心！`;
-      } else if (matchedAcc.length > 0 && matchedNorm.length > 0) {
-        fb = `🌟 同理心指數 ${score}%！用「${matchedNorm[0]}」安撫化解焦慮，一句「${matchedAcc[0]}」極具包容！建議私下輕聲處理！`;
+        const privFeedbacks = [
+          `🌟 同理心指數 ${score}%！用「${matchedPriv[0]}」保護了同學自尊！若能加上具體行動會更完美！`,
+          `🌟 同理心指數 ${score}%！懂得私下（「${matchedPriv[0]}」）溝通非常有體貼心，建議主動給予協助！`
+        ];
+        fb = privFeedbacks[Math.floor(Math.random() * privFeedbacks.length)];
       } else if (matchedAcc.length > 0) {
-        fb = `🌟 同理心指數 ${score}%！用「${matchedAcc[0]}」安撫很有關懷感！建議私下輕聲告知，更能全面顧及對方自尊心！`;
+        const accFeedbacks = [
+          `🌟 同理心指數 ${score}%！主動「${matchedAcc[0]}」展現了陪伴精神！建議私下輕聲說，更顧及尊嚴！`,
+          `🌟 同理心指數 ${score}%！提議「${matchedAcc[0]}」非常有實用價值，是個值得依靠的好夥伴！`
+        ];
+        fb = accFeedbacks[Math.floor(Math.random() * accFeedbacks.length)];
       } else if (matchedNorm.length > 0) {
-        fb = `🌟 同理心指數 ${score}%！用「${matchedNorm[0]}」安撫化解焦慮，極具包容！建議主動遞上紙巾或陪伴去洗手間！`;
+        const normFeedbacks = [
+          `🌟 同理心指數 ${score}%！用「${matchedNorm[0]}」安撫能有效減輕焦慮，非常具備同理意識！`,
+          `🌟 同理心指數 ${score}%！讓人知道「${matchedNorm[0]}」能讓人安心，建議配合私下行動更佳！`
+        ];
+        fb = normFeedbacks[Math.floor(Math.random() * normFeedbacks.length)];
       } else if (matchedAff.length > 0) {
-        fb = `🌟 同理心指數 ${score}%！用「${matchedAff[0]}」肯定重拾自信，很有關懷感！建議私下小聲說，讓對方更自在！`;
+        const affFeedbacks = [
+          `🌟 同理心指數 ${score}%！用「${matchedAff[0]}」肯定給予力量！若私下遞上貼心物資會更到位！`,
+          `🌟 同理心指數 ${score}%！言語充滿肯定（「${matchedAff[0]}」），能幫助同學重拾自信！`
+        ];
+        fb = affFeedbacks[Math.floor(Math.random() * affFeedbacks.length)];
       } else {
-        const snippet = dialogue.trim().replace(/[「」]/g, '').slice(0, 5);
-        fb = `🌟 同理心指數 ${score}%！說「${snippet}」安撫很有關懷感！建議私下悄悄陪伴並提供具體支援！`;
+        const snippet = text.replace(/[「」]/g, '').slice(0, 6);
+        const genericFeedbacks = [
+          `🌟 同理心指數 ${score}%！「${snippet}」展現了關懷，若能加上具體協助（如陪伴）會更好！`,
+          `🌟 同理心指數 ${score}%！態度很溫和！試著私下悄悄告訴他，更能保護同學的自尊心！`,
+          `🌟 同理心指數 ${score}%！這句回應展現了友善，如果能給予具體改善建議會更貼心！`,
+          `🌟 同理心指數 ${score}%！有這份關心的心意很讚，建議配合私下遞紙巾或陪伴行動！`
+        ];
+        fb = genericFeedbacks[Math.floor(Math.random() * genericFeedbacks.length)];
       }
 
       if (fb.length > 50) fb = fb.slice(0, 49) + '！';
@@ -588,11 +640,9 @@
         return;
       }
 
-      // 先紀錄本地點讚次數
       userLikes[id] = given + 1;
       saveUserLikes(userLikes);
 
-      // 立即刷新畫面按鈕狀態
       renderTeacherDashboard();
 
       try {
@@ -612,7 +662,6 @@
       document.getElementById('clear-modal').classList.add('hidden');
     };
 
-    // 一鍵清除 Firebase 所有資料
     window.confirmClearAll = async function() {
       try {
         const querySnapshot = await getDocs(collection(db, "submissions"));
