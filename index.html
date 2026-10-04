@@ -243,6 +243,22 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const LIKES_KEY = 'puberty_empathy_user_likes_v1';
+
+    function getUserLikes() {
+      try {
+        const raw = localStorage.getItem(LIKES_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return {};
+    }
+
+    function saveUserLikes(likes) {
+      try {
+        localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+      } catch (e) {}
+    }
+
     const STUDENTS = [
       '簡慧芳', '蔡峻熙', '陳希澄', '卓凱晉', '張忠俊',
       '招穎軒', '朱樂汶', '段宇晴', '方鈞睎', '何梓悠',
@@ -510,8 +526,13 @@
         return;
       }
 
+      const userLikes = getUserLikes();
+
       submissions.forEach(item => {
         const names = item.groupMembers ? item.groupMembers.join(' 和 ') : '未知組員';
+        const given = userLikes[item.id] || 0;
+        const canLike = given < 2;
+
         const card = document.createElement('div');
         card.className = 'rounded-3xl border-2 border-slate-200 bg-white flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-all';
         card.innerHTML = `
@@ -549,8 +570,8 @@
 
           <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
             <span class="font-black text-rose-500 text-base">💖 ${item.likes || 0} 個讚</span>
-            <button onclick="handleLike('${item.id}')" class="px-4 py-2 rounded-xl font-black text-sm flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white shadow-xs active:scale-95">
-              👍 給讚
+            <button onclick="handleLike('${item.id}')" ${canLike ? '' : 'disabled'} class="px-4 py-2 rounded-xl font-black text-sm flex items-center gap-1 ${canLike ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-xs active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+              ${canLike ? `👍 給讚 (${given}/2)` : '💖 已給滿 2 讚'}
             </button>
           </div>
         `;
@@ -559,11 +580,27 @@
     };
 
     window.handleLike = async function(id) {
+      const userLikes = getUserLikes();
+      const given = userLikes[id] || 0;
+
+      if (given >= 2) {
+        showToast('⚠️ 每組最多只能給 2 個讚！', true);
+        return;
+      }
+
+      // 先紀錄本地點讚次數
+      userLikes[id] = given + 1;
+      saveUserLikes(userLikes);
+
+      // 立即刷新畫面按鈕狀態
+      renderTeacherDashboard();
+
       try {
         const docRef = doc(db, "submissions", id);
         await updateDoc(docRef, { likes: increment(1) });
       } catch (e) {
         console.error("點讚失敗:", e);
+        showToast('❌ 點讚失敗，請稍後再試', true);
       }
     };
 
@@ -582,6 +619,7 @@
         querySnapshot.forEach(async (document) => {
           await deleteDoc(doc(db, "submissions", document.id));
         });
+        localStorage.removeItem(LIKES_KEY);
         closeClearModal();
         showToast('✅ 已成功清空雲端全班成果紀錄！');
       } catch (e) {
