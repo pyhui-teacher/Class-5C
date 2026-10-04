@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小學五年級人文科：應對青春期的生理變化互動學習平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .touch-btn { min-height: 48px; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col p-2 sm:p-4">
+
+  <!-- TOP HEADER -->
+  <header class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs mb-6">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black text-2xl shadow-sm shrink-0">
+          🌱
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+            應對青春期的生理變化 · 同理心互動學習平台
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-500 font-medium">
+            小學五年級人文科 · 手機/iPad 專用優化版
+          </p>
+        </div>
+      </div>
+
+      <!-- VIEW SWITCHER BUTTONS -->
+      <div class="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 w-full md:w-auto">
+        <button id="nav-student" onclick="switchView('student')" class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all bg-white text-emerald-700 shadow-sm border border-emerald-200">
+          📱 學生互動區
+        </button>
+        <button id="nav-teacher" onclick="switchView('teacher')" class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all text-slate-600 hover:text-slate-900">
+          🖥️ 教師成果展台 (<span id="submission-count-badge">0</span>)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 w-full max-w-5xl mx-auto">
+
+    <!-- ================= VIEW 1: STUDENT VIEW ================= -->
+    <div id="view-student" class="space-y-6">
+      <div class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 rounded-3xl p-6 sm:p-7 text-white shadow-lg">
+        <h2 class="text-2xl sm:text-3xl font-black mb-2">學會同理心 · 做溫暖守護同學的成長好夥伴</h2>
+        <p class="text-emerald-50 text-base leading-relaxed">
+          青春期是每個人必經的身體成長蛻變。當同學遇上尷尬或慌張的生理變化時，我們可以用怎樣恰當、溫暖且不傷自尊的話主動關懷他呢？
+        </p>
+      </div>
+
+      <!-- STEP 1: SELECT MEMBERS -->
+      <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h3 class="text-xl sm:text-2xl font-black text-slate-800">【第一步：選擇組別成員】</h3>
+            <p class="text-sm sm:text-base text-slate-500 font-medium">請在下方點選 <span class="font-bold text-emerald-600">2 至 3 位</span> 本組同學姓名</p>
+          </div>
+          <div class="px-4 py-2 rounded-2xl bg-slate-100 font-bold text-base text-slate-700 self-start sm:self-auto">
+            已選組員：<span id="selected-count" class="text-amber-600 font-black">0</span> / 3 人
+          </div>
+        </div>
+
+        <div id="selected-chips" class="flex flex-wrap gap-2 mb-4"></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200 custom-scroll" id="student-grid"></div>
+      </section>
+
+      <!-- STEP 2: DRAW SCENARIO -->
+      <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h3 class="text-xl sm:text-2xl font-black text-slate-800">【第二步：AI 觸發情境題目】</h3>
+            <p class="text-sm sm:text-base text-slate-500 font-medium">點擊按鈕抽取貼近小五校園生活的青春期情境</p>
+          </div>
+          <div class="px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 font-bold text-base self-start sm:self-auto">
+            剩餘次數：<span id="chances-count" class="font-black text-amber-700">3</span> / 3 次
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
+          <button id="btn-draw" onclick="drawScenario()" class="w-full sm:w-auto px-7 py-3.5 rounded-2xl font-black text-lg bg-sky-600 hover:bg-sky-700 text-white shadow-md active:scale-95 transition-all touch-btn">
+            🎲 抽取青春期情境題目
+          </button>
+          <p class="text-sm sm:text-base text-slate-600 font-medium">
+            💡 <strong class="text-amber-700">文字提示：</strong>每組別只有 <strong>3 次</strong> 抽取題目機會，請把握機會慎重選擇！
+          </p>
+        </div>
+
+        <!-- Scenario Card (Auto scrolls into view on mobile) -->
+        <div id="scenario-card" class="hidden bg-sky-50 rounded-3xl p-5 sm:p-6 border-2 border-sky-200">
+          <span id="scenario-tag" class="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white inline-block">📌 本組情境題目</span>
+          <p id="scenario-text" class="text-xl sm:text-2xl font-black text-slate-900 my-4 bg-white/95 p-4 sm:p-5 rounded-2xl border border-sky-100 leading-relaxed"></p>
+        </div>
+      </section>
+
+      <!-- STEP 3: INPUT DIALOGUE -->
+      <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+        <div class="mb-4 border-b border-slate-100 pb-3">
+          <h3 class="text-xl sm:text-2xl font-black text-slate-800">【第三步：學生關懷對白輸入】</h3>
+          <p class="text-sm sm:text-base text-slate-500 font-medium mt-1 leading-relaxed">
+            設身處地思考：你會對這位同學說甚麼？可以給予什麼意見改善問題？怎樣既能伸出援手，又顧及同學尊嚴？
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+          <label class="font-bold text-slate-700 text-base sm:text-lg">💬 請在下方寫下你們小組的關懷對白：</label>
+          <span class="text-xs sm:text-sm font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full self-start sm:self-auto">
+            提示：在 手機/iPad 鍵盤上點擊麥克風即可用語音直接輸入！
+          </span>
+        </div>
+
+        <textarea id="dialogue-input" rows="4" placeholder="請先在上方第二步點擊按鈕抽取題目..." disabled class="w-full p-4 sm:p-5 text-lg font-medium rounded-2xl border-2 border-slate-300 focus:border-emerald-500 outline-none leading-relaxed transition-all"></textarea>
+
+        <div class="mt-4">
+          <button id="btn-submit" onclick="submitAnalysis()" disabled class="w-full py-4 rounded-2xl font-black text-base sm:text-lg bg-slate-200 text-slate-400 cursor-not-allowed shadow-none transition-all touch-btn">
+            ✨ 請先在第二步抽取情境題目
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 4: RESULT -->
+      <section id="result-section" class="hidden bg-white rounded-3xl p-6 sm:p-8 shadow-md border-2 border-emerald-300">
+        <h3 class="text-2xl font-black text-emerald-800 mb-4">🎉【第四步：AI 同理心分析結果】</h3>
+        
+        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-6">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="text-base font-bold text-slate-600">① 綜合同理心指數評級</span>
+            <span id="result-score" class="text-3xl font-black text-emerald-600">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden">
+            <div id="result-progress" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 p-5 sm:p-6 rounded-2xl border-2 border-amber-300 mb-6">
+          <span class="font-black text-amber-900 text-base block mb-2">② 溫暖具體優化提示（就住學生字眼點評，50字以內）：</span>
+          <p id="result-feedback" class="text-2xl font-black text-amber-950 bg-white/90 p-4 rounded-xl border border-amber-200 leading-relaxed"></p>
+          <div class="mt-2 text-xs sm:text-sm font-semibold text-amber-800 flex justify-between">
+            <span>💡 針對具體字眼給予專業溫暖指引</span>
+            <span id="result-feedback-length"></span>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-5 bg-emerald-600 text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+          <div>
+            <h4 class="text-lg font-black">成果已實時同步寫入全班展台！</h4>
+            <p class="text-sm text-emerald-100">現在可以前往全班成果展示儀表板觀摩互評！</p>
+          </div>
+          <button onclick="switchView('teacher')" class="w-full sm:w-auto px-7 py-3 rounded-xl bg-white text-emerald-800 font-black text-base hover:bg-emerald-50 shadow-md">
+            前往全班展台 ➔
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= VIEW 2: TEACHER DASHBOARD ================= -->
+    <div id="view-teacher" class="hidden space-y-6">
+      <div class="rounded-3xl p-5 sm:p-6 border border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200">🖥️ 教師主控端</span>
+          <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 mt-1">全班成果展示儀表板（Teacher Dashboard）</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="renderTeacherDashboard()" class="px-5 py-2.5 rounded-2xl font-bold text-base bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 touch-btn">
+            🔄 實時刷新
+          </button>
+          <button onclick="switchView('student')" class="px-5 py-2.5 rounded-2xl font-bold text-base bg-blue-600 hover:bg-blue-700 text-white touch-btn">
+            切換回學生答題區
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 rounded-2xl border border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="text-sm font-bold text-slate-600">
+          全班已提交組別：<span id="stat-total" class="text-blue-600 font-black text-lg">0</span> 組
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="openClearModal()" class="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-rose-300 flex items-center justify-center min-h-[44px] min-w-[44px] shadow-xs active:scale-95" title="清除所有紀錄" aria-label="清除所有紀錄">
+            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
+          <span class="text-xs sm:text-sm font-black text-rose-600 bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-200 select-none">
+            （🚫學生不得按清除鍵）
+          </span>
+        </div>
+      </div>
+
+      <div id="submissions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+  </main>
+
+  <!-- CUSTOM IN-PAGE CONFIRMATION MODAL -->
+  <div id="clear-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-rose-200">
+      <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4 mx-auto text-2xl font-black">
+        ⚠️
+      </div>
+      <h3 class="text-xl sm:text-2xl font-black text-slate-900 text-center mb-2">確定要清除所有組別紀錄嗎？</h3>
+      <p class="text-slate-600 text-base text-center mb-6 leading-relaxed">
+        點擊確認後，全班所有組別抽到的情境、對白、AI 同理心評估及讚好紀錄將<strong class="text-rose-600">全部刪除並歸零</strong>，無法復原。
+      </p>
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <button onclick="confirmClearAll()" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-base shadow-md active:scale-95">
+          🚨 確認清除全部
+        </button>
+        <button onclick="closeClearModal()" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-base">
+          取消
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM TOAST -->
+  <div id="toast-msg" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-base flex items-center gap-2"></div>
+
+  <script>
+    // 26 Students List (Exact list provided)
+    const STUDENTS = [
+      '簡慧芳', '蔡峻熙', '陳希澄', '卓凱晉', '張忠俊',
+      '招穎軒', '朱樂汶', '段宇晴', '方鈞睎', '何梓悠',
+      '黃梓桐', '許鈞博', '蔣志聰', '簡綽殷', '林穎謙',
+      '劉心語', '李晞琳', '梁泳琳', '羅睿軒', '戴彥樂',
+      '譚文欣', '曾海晴', '曾若晞', '衛施貝', '楊俊霆', '葉俊城'
+    ];
+
+    // Pre-set Scenarios (<= 50 chars)
+    const SCENARIOS = [
+      { id: 'sc-1', title: '男同學變聲被笑', text: '男同學在音樂課唱歌時突然走音破聲，全班有些同學忍不住大笑起來，他難堪地低頭。' },
+      { id: 'sc-2', title: '女同學裙沾經血', text: '女同學突然發現經血不小心沾到校裙上，顯得極度慌張不安，想遮又不敢走動。' },
+      { id: 'sc-3', title: '體育課後汗味重', text: '體育課後旁邊同學汗味較重，有同儕悄悄移開座位並偷偷議論，讓他十分尷尬。' },
+      { id: 'sc-4', title: '臉上長暗瘡被取笑', text: '同學臉上長了幾顆紅腫暗瘡，被同伴笑稱「火山爆發」，整天不敢抬頭看人。' },
+      { id: 'sc-5', title: '女生胸部發育羞澀', text: '女同學因為胸部開始發育而感到害羞，走路總是駝背，有男生投以好奇異樣眼光。' },
+      { id: 'sc-6', title: '男生長唇毛被嘲笑', text: '男同學唇邊長出淡淡幼黑鬍鬚毛，同伴戲弄他像個小老頭，他尷尬地用手捂著嘴。' }
+    ];
+
+    const STORAGE_KEY = 'puberty_empathy_submissions_v1';
+    const LIKES_KEY = 'puberty_empathy_user_likes_v1';
+
+    let inMemorySubmissions = [];
+    let inMemoryLikes = {};
+    let selectedStudents = [];
+    let chancesLeft = 3;
+    let currentScenario = null;
+
+    function showToast(text, isError = false) {
+      const toast = document.getElementById('toast-msg');
+      toast.innerText = text;
+      toast.className = `fixed top-6 left-1/2 -translate-x-1/2 z-50 ${isError ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-base flex items-center gap-2 whitespace-nowrap`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    function getSubmissions() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return inMemorySubmissions;
+    }
+
+    function saveSubmissions(list) {
+      inMemorySubmissions = list;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {}
+      updateBadge();
+    }
+
+    function getUserLikes() {
+      try {
+        const raw = localStorage.getItem(LIKES_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return inMemoryLikes;
+    }
+
+    function saveUserLikes(likes) {
+      inMemoryLikes = likes;
+      try {
+        localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+      } catch (e) {}
+    }
+
+    function initStudents() {
+      const grid = document.getElementById('student-grid');
+      grid.innerHTML = '';
+      STUDENTS.forEach(name => {
+        const btn = document.createElement('button');
+        btn.id = 'stu-' + name;
+        btn.className = 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-300';
+        btn.innerText = name;
+        btn.onclick = () => toggleStudent(name);
+        grid.appendChild(btn);
+      });
+    }
+
+    function toggleStudent(name) {
+      if (selectedStudents.includes(name)) {
+        selectedStudents = selectedStudents.filter(n => n !== name);
+      } else {
+        if (selectedStudents.length >= 3) {
+          showToast('⚠️ 每組最多選擇 3 位同學！', true);
+          return;
+        }
+        selectedStudents.push(name);
+      }
+      renderStudentSelection();
+    }
+
+    function renderStudentSelection() {
+      STUDENTS.forEach(name => {
+        const btn = document.getElementById('stu-' + name);
+        if (btn) {
+          if (selectedStudents.includes(name)) {
+            btn.className = 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-emerald-600 text-white border-emerald-600 shadow-sm';
+          } else {
+            btn.className = 'py-2.5 px-2 rounded-xl font-bold text-base text-center transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-300';
+          }
+        }
+      });
+
+      const countEl = document.getElementById('selected-count');
+      countEl.innerText = selectedStudents.length;
+      countEl.className = (selectedStudents.length >= 2 && selectedStudents.length <= 3) ? 'text-emerald-600 font-black' : 'text-amber-600 font-black';
+
+      const chipsEl = document.getElementById('selected-chips');
+      chipsEl.innerHTML = '';
+      selectedStudents.forEach(name => {
+        const chip = document.createElement('span');
+        chip.className = 'px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-sm flex items-center gap-1.5 shadow-2xs';
+        chip.innerHTML = `${name} <button onclick="toggleStudent('${name}')" class="text-xs bg-emerald-200 hover:bg-emerald-300 text-emerald-900 rounded-full w-4 h-4 ml-1 flex items-center justify-center">✕</button>`;
+        chipsEl.appendChild(chip);
+      });
+
+      checkInputsValid();
+    }
+
+    function drawScenario() {
+      if (chancesLeft <= 0) {
+        showToast('⚠️ 抽取次數已用盡！請就當前題目作答。', true);
+        return;
+      }
+      chancesLeft--;
+      document.getElementById('chances-count').innerText = chancesLeft;
+
+      let available = SCENARIOS.filter(s => !currentScenario || s.id !== currentScenario.id);
+      if (available.length === 0) available = SCENARIOS;
+      const randomIdx = Math.floor(Math.random() * available.length);
+      currentScenario = available[randomIdx];
+
+      const card = document.getElementById('scenario-card');
+      card.classList.remove('hidden');
+      document.getElementById('scenario-tag').innerText = `📌 本組情境題目 · ${currentScenario.title}`;
+      document.getElementById('scenario-text').innerText = `「${currentScenario.text}」`;
+
+      const drawBtn = document.getElementById('btn-draw');
+      if (chancesLeft > 0) {
+        drawBtn.innerText = `🎲 重新抽取題目（換一題 · 剩餘 ${chancesLeft} 次）`;
+      } else {
+        drawBtn.disabled = true;
+        drawBtn.innerText = '🎲 抽取次數已達上限 (0 次)';
+        drawBtn.className = 'w-full sm:w-auto px-7 py-3.5 rounded-2xl font-black text-lg bg-slate-200 text-slate-400 cursor-not-allowed';
+      }
+
+      const input = document.getElementById('dialogue-input');
+      input.disabled = false;
+      input.placeholder = '請在此輸入你想對同學說的話，以及你建議的做法...';
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate(40); } catch(e) {}
+      }
+
+      setTimeout(() => {
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+
+      checkInputsValid();
+    }
+
+    function checkInputsValid() {
+      const dialogue = document.getElementById('dialogue-input').value.trim();
+      const btn = document.getElementById('btn-submit');
+      if (!currentScenario) {
+        btn.disabled = true;
+        btn.innerText = '✨ 請先在第二步抽取情境題目';
+        btn.className = 'w-full py-4 rounded-2xl font-black text-base sm:text-lg bg-slate-200 text-slate-400 cursor-not-allowed shadow-none transition-all touch-btn';
+        return;
+      }
+      if (selectedStudents.length < 2) {
+        btn.disabled = true;
+        btn.innerText = '✨ 請在第一步選擇 2 至 3 位組員名稱';
+        btn.className = 'w-full py-4 rounded-2xl font-black text-base sm:text-lg bg-amber-100 text-amber-800 cursor-not-allowed shadow-none transition-all touch-btn';
+        return;
+      }
+      if (dialogue.length < 4) {
+        btn.disabled = true;
+        btn.innerText = '✨ 請在下方輸入關懷對白（至少 4 個字）';
+        btn.className = 'w-full py-4 rounded-2xl font-black text-base sm:text-lg bg-slate-200 text-slate-400 cursor-not-allowed shadow-none transition-all touch-btn';
+        return;
+      }
+
+      btn.disabled = false;
+      btn.innerText = '✨ 送交 AI 同理心精準分析並寫入全班展台';
+      btn.className = 'w-full py-4 rounded-2xl font-black text-lg sm:text-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg active:scale-95 transition-all touch-btn';
+    }
+
+    document.getElementById('dialogue-input').addEventListener('input', checkInputsValid);
+
+    // Intelligent empathy analysis with quotes strictly <= 50 Chinese chars
+    // Format: 🌟 同理心指數 92%！用「XXX」安撫顯得很有關懷感，一句「XXX」極具包容！建議XXXX
+    function analyzeDialogue(dialogue) {
+      const text = dialogue.toLowerCase();
+      const negativeWords = ['好臭', '噁心', '大笨象', '不要唱', '好醜', '走開', '好髒', '離遠點', '怪胎', '裝什麼', '難聞'];
+      const privacyWords = ['悄悄', '私下', '小聲', '偷偷', '暗中', '遮住', '擋住', '別讓大家看見'];
+      const accompanyWords = ['陪你', '一起', '跟我來', '帶你', '借你', '借給你', '外套', '紙巾', '濕紙巾', '溫水', '去洗手間', '找老師', '去醫療室'];
+      const normalizeWords = ['正常', '長大', '青春期', '大家都會', '沒關係', '別害怕', '別擔心', '別難過', '勇敢', '男子漢', '健康'];
+      const affirmWords = ['很棒', '笑容', '帥氣', '漂亮', '優秀', '特別', '好聽'];
+
+      const matchedBad = negativeWords.filter(w => text.includes(w));
+      const matchedPriv = privacyWords.filter(w => text.includes(w));
+      const matchedAcc = accompanyWords.filter(w => text.includes(w));
+      const matchedNorm = normalizeWords.filter(w => text.includes(w));
+      const matchedAff = affirmWords.filter(w => text.includes(w));
+
+      let score = 75;
+      if (matchedPriv.length > 0) score += 12;
+      if (matchedAcc.length > 0) score += 10;
+      if (matchedNorm.length > 0) score += 8;
+      if (matchedAff.length > 0) score += 5;
+      score = Math.min(99, score);
+
+      let fb = '';
+      if (matchedBad.length > 0) {
+        score = 35;
+        fb = `🌟 同理心指數 ${score}%！用「${matchedBad[0]}」易傷自尊！改用「大家都會」安撫，建議私下小聲提醒！`;
+      } else if (matchedPriv.length > 0 && matchedAcc.length > 0) {
+        fb = `🌟 同理心指數 ${score}%！用「${matchedPriv[0]}」顧及隱私，一句「${matchedAcc[0]}」極具包容！建議主動陪伴處理！`;
+      } else if (matchedPriv.length > 0) {
+        fb = `🌟 同理心指數 ${score}%！用「${matchedPriv[0]}」安撫很有關懷感！建議加上具體陪伴協助，更顯貼心！`;
+      } else if (matchedAcc.length > 0 && matchedNorm.length > 0) {
+        fb = `🌟 同理心指數 ${score}%！用「${matchedNorm[0]}」安撫化解焦慮，一句「${matchedAcc[0]}」極具包容！建議私下輕聲處理！`;
+      } else if (matchedAcc.length > 0) {
+        fb = `🌟 同理心指數 ${score}%！用「${matchedAcc[0]}」安撫很有關懷感！建議私下輕聲告知，更能全面顧及對方自尊心！`;
+      } else if (matchedNorm.length > 0) {
+        fb = `🌟 同理心指數 ${score}%！用「${matchedNorm[0]}」安撫化解焦慮，極具包容！建議主動遞上紙巾或陪伴去洗手間！`;
+      } else if (matchedAff.length > 0) {
+        fb = `🌟 同理心指數 ${score}%！用「${matchedAff[0]}」肯定重拾自信，很有關懷感！建議私下小聲說，讓對方更自在！`;
+      } else {
+        const snippet = dialogue.trim().replace(/[「」]/g, '').slice(0, 5);
+        fb = `🌟 同理心指數 ${score}%！說「${snippet}」安撫很有關懷感！建議私下悄悄陪伴並提供具體支援！`;
+      }
+
+      if (fb.length > 50) {
+        fb = fb.slice(0, 49) + '！';
+      }
+
+      return { score, feedback: fb };
+    }
+
+    function submitAnalysis() {
+      const dialogue = document.getElementById('dialogue-input').value.trim();
+      const analysis = analyzeDialogue(dialogue);
+
+      const submission = {
+        id: 'sub-' + Date.now(),
+        groupMembers: [...selectedStudents],
+        scenario: currentScenario.text,
+        dialogue: dialogue,
+        empathyScore: analysis.score,
+        feedback: analysis.feedback,
+        createdAt: Date.now(),
+        likes: 0
+      };
+
+      const subs = getSubmissions();
+      subs.unshift(submission);
+      saveSubmissions(subs);
+
+      document.getElementById('result-section').classList.remove('hidden');
+      document.getElementById('result-score').innerText = analysis.score + '%';
+      document.getElementById('result-progress').style.width = analysis.score + '%';
+      document.getElementById('result-feedback').innerText = `「${analysis.feedback}」`;
+      document.getElementById('result-feedback-length').innerText = `字數：${analysis.feedback.length} 字（標準 50 字內）`;
+
+      document.getElementById('btn-submit').disabled = true;
+      document.getElementById('dialogue-input').disabled = true;
+
+      showToast('✅ 成果已實時寫入全班展台！');
+    }
+
+    function switchView(view) {
+      if (view === 'student') {
+        document.getElementById('view-student').classList.remove('hidden');
+        document.getElementById('view-teacher').classList.add('hidden');
+        document.getElementById('nav-student').className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all bg-white text-emerald-700 shadow-sm border border-emerald-200';
+        document.getElementById('nav-teacher').className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all text-slate-600 hover:text-slate-900';
+      } else {
+        document.getElementById('view-student').classList.add('hidden');
+        document.getElementById('view-teacher').classList.remove('hidden');
+        document.getElementById('nav-teacher').className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all bg-white text-blue-700 shadow-sm border border-blue-200';
+        document.getElementById('nav-student').className = 'flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-black text-base transition-all text-slate-600 hover:text-slate-900';
+        renderTeacherDashboard();
+      }
+    }
+
+    function renderTeacherDashboard() {
+      const subs = getSubmissions();
+      const userLikes = getUserLikes();
+      document.getElementById('stat-total').innerText = subs.length;
+      updateBadge();
+
+      const grid = document.getElementById('submissions-grid');
+      grid.innerHTML = '';
+
+      if (subs.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full p-12 text-center rounded-3xl border-2 border-dashed border-slate-300 bg-white text-slate-500">
+            <h3 class="text-xl font-bold text-slate-700">目前尚無成果紀錄</h3>
+            <p class="text-base mt-1 text-slate-500">請組別在「學生互動區」抽取題目並輸入關懷對白！</p>
+          </div>
+        `;
+        return;
+      }
+
+      subs.forEach(item => {
+        const names = item.groupMembers.join(' 和 ');
+        const given = userLikes[item.id] || 0;
+        const canLike = given < 2;
+
+        const card = document.createElement('div');
+        card.className = 'rounded-3xl border-2 border-slate-200 bg-white flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-all';
+        card.innerHTML = `
+          <div class="p-5 border-b border-slate-100 bg-slate-50">
+            <h3 class="text-xl sm:text-2xl font-black text-slate-900 leading-snug">${names}</h3>
+            <span class="text-xs text-slate-400">${item.groupMembers.length} 人組 · ${new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
+          </div>
+
+          <div class="p-5 space-y-3.5 flex-1">
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm">
+              <strong class="text-sky-600 block text-xs">📌 抽到的情境：</strong>
+              <p class="font-bold mt-1 text-slate-800 leading-snug">「${item.scenario}」</p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-emerald-50/70 border-2 border-emerald-300 text-emerald-950">
+              <strong class="text-emerald-700 block text-xs">💬 學生關懷對白：</strong>
+              <p class="font-black text-lg mt-1 leading-relaxed">${item.dialogue}</p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-black text-slate-500">📊 AI 同理心指數</span>
+                <span class="text-xl font-black text-emerald-600">🌟 ${item.empathyScore}%</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-emerald-500 h-full" style="width: ${item.empathyScore}%"></div>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl border-2 border-amber-300 bg-amber-50/80 text-amber-950 text-sm">
+              <strong class="text-amber-800 block text-xs">💡 AI 1 句話優化提示（50字以內）：</strong>
+              <p class="font-black text-base mt-1">「${item.feedback}」</p>
+            </div>
+          </div>
+
+          <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+            <span class="font-black text-rose-500 text-base">💖 ${item.likes || 0} 個讚</span>
+            <button onclick="handleLike('${item.id}')" ${canLike ? '' : 'disabled'} class="px-4 py-2 rounded-xl font-black text-sm flex items-center gap-1 ${canLike ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-xs active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+              ${canLike ? `👍 給讚 (${given}/2)` : '💖 已給滿 2 讚'}
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function handleLike(id) {
+      const likes = getUserLikes();
+      const count = likes[id] || 0;
+      if (count >= 2) return;
+      likes[id] = count + 1;
+      saveUserLikes(likes);
+
+      const subs = getSubmissions();
+      const target = subs.find(s => s.id === id);
+      if (target) {
+        target.likes = (target.likes || 0) + 1;
+        saveSubmissions(subs);
+      }
+      renderTeacherDashboard();
+    }
+
+    function openClearModal() {
+      document.getElementById('clear-modal').classList.remove('hidden');
+    }
+
+    function closeClearModal() {
+      document.getElementById('clear-modal').classList.add('hidden');
+    }
+
+    function confirmClearAll() {
+      inMemorySubmissions = [];
+      inMemoryLikes = {};
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LIKES_KEY);
+      } catch (e) {}
+      closeClearModal();
+      renderTeacherDashboard();
+      showToast('✅ 已成功清空全班成果紀錄！');
+    }
+
+    function updateBadge() {
+      const subs = getSubmissions();
+      document.getElementById('submission-count-badge').innerText = subs.length;
+    }
+
+    // Initialize
+    initStudents();
+    updateBadge();
+  </script>
+</body>
+</html>
